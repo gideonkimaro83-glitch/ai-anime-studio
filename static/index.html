@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Anime Studio</title>
+<style>
+  :root {
+    --bg: #0d0e1a; --panel: #161829; --panel2: #1e2136; --line: #2c3050;
+    --text: #ecebf5; --muted: #9a9cb8; --accent: #ff7aa8; --accent2: #7aa8ff; --ok: #5fd6a0; --warn: #ffc46b;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.5 "Segoe UI", system-ui, sans-serif; background: radial-gradient(1200px 600px at 80% -10%, #2a1d4a 0%, transparent 60%), var(--bg); color: var(--text); min-height: 100vh; }
+  header { padding: 28px 24px 8px; max-width: 1200px; margin: 0 auto; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+  h1 { margin: 0; font-size: 26px; letter-spacing: .5px; }
+  h1 span { background: linear-gradient(90deg, var(--accent), var(--accent2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .sub { color: var(--muted); margin: 2px 0 0; font-size: 14px; }
+  .badge { font-size: 13px; padding: 6px 12px; border-radius: 999px; background: var(--panel2); border: 1px solid var(--line); color: var(--muted); }
+  .badge.ok { color: var(--ok); border-color: #2f6b55; }
+  .badge.warn { color: var(--warn); border-color: #6b5a2f; }
+  main { max-width: 1200px; margin: 0 auto; padding: 16px 24px 48px; display: grid; grid-template-columns: 380px 1fr; gap: 20px; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 20px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin: 14px 0 6px; }
+  label:first-child { margin-top: 0; }
+  input[type=text], textarea, select, input[type=number] { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel2); color: var(--text); font: inherit; }
+  textarea { min-height: 110px; resize: vertical; }
+  input:focus, textarea:focus, select:focus { outline: 2px solid var(--accent2); outline-offset: 0; border-color: transparent; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .check { display: flex; align-items: center; gap: 8px; margin-top: 16px; color: var(--text); font-size: 14px; }
+  .check input { width: 18px; height: 18px; accent-color: var(--accent); }
+  button { margin-top: 20px; width: 100%; padding: 13px; border: 0; border-radius: 12px; font-family: inherit; font-size: 16px; font-weight: 600; color: #1a1020; background: linear-gradient(90deg, var(--accent), #ffb27a); cursor: pointer; transition: transform .1s, opacity .2s; }
+  button:hover:not(:disabled) { transform: translateY(-1px); }
+  button:disabled { opacity: .55; cursor: wait; }
+  .hint { color: var(--muted); font-size: 12.5px; margin-top: 12px; }
+  .empty { display: grid; place-items: center; min-height: 420px; text-align: center; color: var(--muted); }
+  .empty .big { font-size: 46px; margin-bottom: 6px; }
+  .spinner { width: 46px; height: 46px; border-radius: 50%; border: 4px solid var(--line); border-top-color: var(--accent); animation: spin 1s linear infinite; margin: 0 auto 14px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  video { width: 100%; border-radius: 12px; background: #000; aspect-ratio: 16/9; display: block; }
+  .meta { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 14px 0 4px; }
+  .meta a { color: var(--text); text-decoration: none; padding: 8px 14px; border-radius: 10px; background: var(--panel2); border: 1px solid var(--line); font-size: 14px; }
+  .meta a:hover { border-color: var(--accent2); }
+  .note { font-size: 13px; color: var(--muted); }
+  .error { color: #ff8a8a; background: #2a1520; border: 1px solid #5a2a35; padding: 12px; border-radius: 10px; }
+  h2 { font-size: 20px; margin: 22px 0 4px; }
+  h3 { font-size: 15px; margin: 22px 0 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .logline { color: var(--muted); margin: 0; }
+  .chars { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+  .char { background: var(--panel2); border: 1px solid var(--line); border-radius: 12px; padding: 12px; font-size: 13.5px; }
+  .char b { font-size: 15px; } .char .role { color: var(--accent); font-size: 12px; text-transform: uppercase; letter-spacing: .5px; }
+  .char p { margin: 6px 0 0; color: var(--muted); }
+  .char img { display: block; width: 100%; height: 170px; object-fit: cover; object-position: top; border-radius: 8px; margin-bottom: 10px; background: linear-gradient(160deg, #2a2f55, #4a2f55); }
+  .scene { border-left: 3px solid var(--accent2); background: var(--panel2); border-radius: 0 12px 12px 0; padding: 12px 14px; margin-bottom: 10px; }
+  .scene .head { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .scene .mood { font-size: 12px; color: var(--accent2); text-transform: uppercase; letter-spacing: .5px; }
+  .scene .setting { color: var(--muted); font-size: 13px; }
+  .scene p { margin: 6px 0; }
+  .line { font-size: 14px; margin: 3px 0; } .line b { color: var(--accent); }
+  .line.act { color: #ffd27a; } .line.narr { color: var(--muted); font-style: italic; }
+  .bar { width: min(420px, 80vw); height: 10px; border-radius: 99px; background: var(--panel2); border: 1px solid var(--line); overflow: hidden; margin: 12px auto 6px; }
+  .bar > div { height: 100%; width: 0; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width .4s; }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>✦ <span>AI Anime Studio</span></h1>
+    <p class="sub">Premise → episode script → storyboard MP4 · runs entirely on your machine</p>
+  </div>
+  <div id="health" class="badge">Checking local AI…</div>
+</header>
+
+<main>
+  <form id="form" class="card">
+    <label for="title">Episode title</label>
+    <input id="title" type="text" required maxlength="120" value="Blade of the Last Lantern">
+
+    <label for="premise">Premise</label>
+    <textarea id="premise" required minlength="5" maxlength="1200">A shy village swordsmith discovers that the blade she forged can cut through the demons haunting her mountain home.</textarea>
+
+    <div class="row">
+      <div>
+        <label for="genre">Genre</label>
+        <select id="genre">
+          <option>Demon-hunting swordsman</option><option>Holy knights fantasy</option>
+          <option>Fantasy adventure</option><option>Sci-fi mecha</option><option>Cyberpunk thriller</option>
+          <option>School slice of life</option><option>Romance comedy</option><option>Supernatural mystery</option>
+          <option>Horror</option><option>Sports drama</option>
+        </select>
+      </div>
+      <div>
+        <label for="scenes">Scenes</label>
+        <input id="scenes" type="number" min="3" max="12" value="6">
+      </div>
+    </div>
+
+    <label for="style">Visual style</label>
+    <select id="style">
+      <option>Taisho ink action (Demon Slayer-inspired)</option>
+      <option>Bright medieval (Seven Deadly Sins-inspired)</option>
+      <option>Cinematic anime</option><option>Retro 90s cel</option><option>Watercolor storybook</option>
+      <option>Neon noir</option><option>Bright shōnen</option>
+    </select>
+
+    <label for="scene_length">Scene length</label>
+    <select id="scene_length">
+      <option value="long" selected>Long — about 40–60 s per scene, with fights</option>
+      <option value="standard">Standard — about 20–30 s per scene</option>
+      <option value="short">Short — about 10–15 s per scene (fastest)</option>
+    </select>
+
+    <label class="check"><input id="use_ai" type="checkbox" checked> Write the script with local AI (Ollama)</label>
+
+    <button id="go" type="submit">Create episode</button>
+    <p class="hint">Long scenes make a 4–6 minute episode and can take several minutes to render. Choose Short for a quick test. AI script writing adds time depending on your hardware.</p>
+  </form>
+
+  <section id="out" class="card">
+    <div class="empty"><div><div class="big">🎬</div>Your storyboard episode will appear here.</div></div>
+  </section>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+async function checkHealth() {
+  const el = $("health");
+  try {
+    const r = await fetch("/api/health");
+    const { ollama } = await r.json();
+    if (ollama.available && ollama.model_installed) {
+      el.className = "badge ok"; el.textContent = `● Ollama ready · ${ollama.model}`;
+    } else if (ollama.available) {
+      el.className = "badge warn"; el.textContent = `● Ollama running · model ${ollama.model} not installed`;
+      el.title = `Run: ollama pull ${ollama.model}`;
+    } else {
+      el.className = "badge warn"; el.textContent = "● Ollama offline · built-in template will be used";
+    }
+  } catch { el.textContent = "● Server unreachable"; }
+}
+
+function beatHtml(b) {
+  if (b.type === "action") return `<div class="line act">⚔ <b>${esc(b.character)}</b> attacks ${esc(b.target)}${b.move ? ` — ${esc(b.move)}` : ""}</div>`;
+  if (b.type === "narration") return `<div class="line narr">${esc(b.text)}</div>`;
+  return `<div class="line"><b>${esc(b.character)}:</b> ${esc(b.line)}</div>`;
+}
+
+function renderResult(d) {
+  const s = d.script;
+  $("out").innerHTML = `
+    <video controls autoplay src="${esc(d.video_url)}"></video>
+    <div class="meta">
+      <a href="${esc(d.video_url)}" download>⬇ Download MP4</a>
+      <a href="${esc(d.script_url)}" download>⬇ Download script JSON</a>
+      <span class="note">${d.duration_seconds}s video · made in ${d.elapsed_seconds}s · ${d.source === "ollama" ? "AI-written" : "template"} script</span>
+    </div>
+    <p class="note">${esc(d.note)}</p>
+    <h2>${esc(s.title)}</h2>
+    <p class="logline">${esc(s.logline)}</p>
+    <h3>Characters</h3>
+    <div class="chars">${s.characters.map((c) => `
+      <div class="char">${c.portrait_url ? `<img src="${esc(c.portrait_url)}" alt="Portrait of ${esc(c.name)}">` : ""}<div class="role">${esc(c.role)}</div><b>${esc(c.name)}</b>
+      <p>${esc(c.appearance)}</p><p>${esc(c.personality)}</p></div>`).join("")}</div>
+    <h3>Scenes</h3>
+    ${s.scenes.map((sc) => `
+      <div class="scene">
+        <div class="head"><b>${sc.number}. ${esc(sc.title)}</b><span class="mood">${esc(sc.mood)}</span></div>
+        <div class="setting">${esc(sc.setting)}</div>
+        <p>${esc(sc.description)}</p>
+        ${(sc.beats || sc.dialogue.map((l) => ({ type: "dialogue", ...l }))).map(beatHtml).join("")}
+      </div>`).join("")}`;
+}
+
+$("form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const btn = $("go");
+  btn.disabled = true;
+  const t0 = Date.now();
+  $("out").innerHTML = `<div class="empty"><div><div class="spinner"></div>
+    <div id="status">Starting…</div>
+    <div class="bar"><div id="bar"></div></div>
+    <div class="note"><span id="pct">0%</span> · <span id="timer">0s</span></div></div></div>`;
+  const timer = setInterval(() => { const t = $("timer"); if (t) t.textContent = `${Math.round((Date.now() - t0) / 1000)}s`; }, 1000);
+  try {
+    const r = await fetch("/api/jobs", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: $("title").value.trim(), premise: $("premise").value.trim(), genre: $("genre").value,
+        scenes: Number($("scenes").value), style: $("style").value, scene_length: $("scene_length").value,
+        use_ai: $("use_ai").checked,
+      }),
+    });
+    const j = await r.json();
+    if (!r.ok) throw new Error(typeof j.detail === "string" ? j.detail : JSON.stringify(j.detail));
+    for (;;) {
+      await new Promise((res) => setTimeout(res, 1000));
+      const s = await (await fetch(`/api/jobs/${j.id}`)).json();
+      if (s.status === "error") throw new Error(s.error || "Rendering failed");
+      if ($("status")) {
+        $("status").textContent = s.stage;
+        $("bar").style.width = `${Math.round(s.progress * 100)}%`;
+        $("pct").textContent = `${Math.round(s.progress * 100)}%`;
+      }
+      if (s.status === "done") { renderResult(s.result); break; }
+    }
+  } catch (err) {
+    $("out").innerHTML = `<div class="error">Something went wrong: ${esc(err.message)}</div>`;
+  } finally {
+    clearInterval(timer); btn.disabled = false;
+  }
+});
+
+checkHealth();
+</script>
+</body>
+</html>
